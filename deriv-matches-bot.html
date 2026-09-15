@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deriv Matches Bot - Estrategias de Trading</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel h2 {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.5em;
+        }
+
+        .strategy-item, .asset-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .strategy-item:hover, .asset-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(5px);
+        }
+
+        .strategy-info, .asset-info {
+            flex: 1;
+        }
+
+        .strategy-name, .asset-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .strategy-desc, .asset-desc {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        /* Custom Checkbox */
+        .checkbox-wrapper {
+            position: relative;
+            width: 60px;
+            height: 30px;
+        }
+
+        .checkbox-wrapper input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #00ff88;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #00ff88;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .app-id-input {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+            width: 200px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-connect {
+            background: #00ff88;
+            color: #1e3c72;
+        }
+
+        .btn-connect:hover {
+            background: #00cc6a;
+            transform: scale(1.05);
+        }
+
+        .btn-disconnect {
+            background: #ff4444;
+            color: white;
+        }
+
+        .assets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .assets-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .assets-grid::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .assets-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        .analysis-section {
+            margin-top: 20px;
+        }
+
+        .active-assets-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .asset-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #00ff88;
+        }
+
+        .asset-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .asset-card-title {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .current-digit {
+            font-size: 2em;
+            font-weight: bold;
+            color: #00ff88;
+            text-align: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .digit-distribution {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 3px;
+            margin-top: 10px;
+        }
+
+        .digit-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .digit-bar-value {
+            font-size: 0.7em;
+            margin-bottom: 3px;
+        }
+
+        .digit-bar-graph {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            height: 50px;
+            position: relative;
+        }
+
+        .digit-bar-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(to top, #00ff88, #00cc6a);
+            border-radius: 3px;
+            transition: height 0.3s ease;
+        }
+
+        .digit-bar-label {
+            font-size: 0.6em;
+            margin-top: 3px;
+            opacity: 0.8;
+        }
+
+        .benford-analysis {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .benford-title {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            color: #ffd700;
+        }
+
+        .benford-data {
+            font-size: 0.8em;
+            line-height: 1.6;
+        }
+
+        .pattern-analysis {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .pattern-title {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            color: #ff6b6b;
+        }
+
+        .pattern-data {
+            font-size: 0.8em;
+        }
+
+        .signal-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            text-transform: uppercase;
+        }
+
+        .signal-buy {
+            background: rgba(0, 255, 136, 0.3);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+        }
+
+        .signal-sell {
+            background: rgba(255, 68, 68, 0.3);
+            border: 2px solid #ff4444;
+            color: #ff4444;
+        }
+
+        .signal-wait {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #ffffff;
+            color: #ffffff;
+        }
+
+        .last-digit-history {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+            overflow-x: auto;
+            padding: 5px 0;
+        }
+
+        .last-digit-item {
+            min-width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.85em;
+        }
+
+        .tick-log {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
+        .tick-log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tick-log-time {
+            color: #00ff88;
+            margin-right: 10px;
+        }
+
+        .tick-log-symbol {
+            color: #ffd700;
+            margin-right: 10px;
+        }
+
+        .controls-section {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .control-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+        }
+
+        .select-input {
+            cursor: pointer;
+        }
+
+        .info-tooltip {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 0.8em;
+            cursor: help;
+            margin-left: 5px;
+        }
+
+        .info-tooltip:hover::after {
+            content: attr(data-info);
+            position: absolute;
+            background: #333;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            width: 250px;
+            z-index: 1000;
+            margin-left: 10px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+
+        .warning-box {
+            background: rgba(255, 193, 7, 0.2);
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .warning-box strong {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Deriv Matches Bot</h1>
+            <p class="subtitle">Sistema de análisis de dígitos con múltiples estrategias</p>
+        </header>
+
+        <div class="warning-box">
+            <strong>⚠️ ADVERTENCIA:</strong> Este bot es solo para fines educativos y de análisis. El trading implica riesgos significativos. 
+            Nunca opere con dinero real sin comprender completamente los riesgos. Los resultados pasados no garantizan resultados futuros.
+        </div>
+
+        <div class="status-bar">
+            <div class="connection-status">
+                <div class="status-indicator" id="connectionIndicator"></div>
+                <span id="connectionText">Desconectado</span>
+            </div>
+            <div>
+                <input type="text" class="app-id-input" id="appIdInput" placeholder="App ID" value="108986">
+                <button class="btn btn-connect" id="connectBtn" onclick="toggleConnection()">Conectar</button>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- Panel Izquierdo: Configuración -->
+            <div class="left-panel">
+                <div class="panel">
+                    <h2>📊 Estrategias</h2>
+                    
+                    <div class="strategy-item">
+                        <div class="strategy-info">
+                            <div class="strategy-name">
+                                Distribución de Dígitos
+                                <span class="info-tooltip" data-info="Analiza la frecuencia de aparición de cada dígito (0-9) en los últimos ticks. Identifica dígitos calientes y fríos basándose en su distribución estadística.">ℹ️</span>
+                            </div>
+                            <div class="strategy-desc">Frecuencia de dígitos 0-9</div>
+                        </div>
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="strategyDistribution" checked onchange="updateStrategies()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="strategy-item">
+                        <div class="strategy-info">
+                            <div class="strategy-name">
+                                Ley de Benford
+                                <span class="info-tooltip" data-info="Aplica la Ley de Benford que establece que en muchos conjuntos de datos numéricos, el dígito 1 tiende a aparecer como primer dígito con mayor frecuencia (~30%), seguido del 2 (~17.6%), etc.">ℹ️</span>
+                            </div>
+                            <div class="strategy-desc">Anomalías estadísticas</div>
+                        </div>
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="strategyBenford" checked onchange="updateStrategies()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="strategy-item">
+                        <div class="strategy-info">
+                            <div class="strategy-name">
+                                Patrones de Repetición
+                                <span class="info-tooltip" data-info="Detecta secuencias repetitivas y patrones en los últimos dígitos. Identifica rachas, repeticiones consecutivas y patrones cíclicos que podrían indicar oportunidades.">ℹ️</span>
+                            </div>
+                            <div class="strategy-desc">Detección de secuencias</div>
+                        </div>
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="strategyPatterns" checked onchange="updateStrategies()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <h2 style="margin-top: 30px;">🎯 Activos</h2>
+                    <div class="controls-section">
+                        <div class="control-group">
+                            <label class="control-label">Tipo de Activo:</label>
+                            <select class="control-input select-input" id="assetTypeFilter" onchange="filterAssets()">
+                                <option value="all">Todos</option>
+                                <option value="volatility">Volatility Indices</option>
+                                <option value="forex">Forex</option>
+                                <option value="crypto">Criptomonedas</option>
+                                <option value="commodities">Commodities</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="assets-grid" id="assetsGrid">
+                        <!-- Los activos se cargarán dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Derecho: Análisis -->
+            <div class="right-panel">
+                <div class="panel">
+                    <h2>📈 Análisis en Tiempo Real</h2>
+                    
+                    <div class="controls-section">
+                        <div class="control-group">
+                            <label class="control-label">Stake (Cantidad):</label>
+                            <input type="number" class="control-input" id="stakeAmount" value="10" min="1" max="1000">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">Duración (Ticks):</label>
+                            <input type="number" class="control-input" id="durationTicks" value="5" min="1" max="10">
+                        </div>
+                    </div>
+
+                    <div class="analysis-section">
+                        <h3 style="margin-bottom: 15px;">Activos Monitoreados</h3>
+                        <div class="active-assets-display" id="activeAssetsDisplay">
+                            <div style="grid-column: 1/-1; text-align: center; opacity: 0.7; padding: 40px;">
+                                Seleccione activos y conecte para comenzar el análisis
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tick-log" id="tickLog">
+                        <div class="tick-log-entry">Esperando conexión...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Deriv Matches Bot © 2024 | Solo para fines educativos</p>
+            <p>API de Deriv - WebSocket Trading Analysis</p>
+        </footer>
+    </div>
+
+    <script>
+        // Variables globales
+        let ws = null;
+        let isConnected = false;
+        let activeAssets = new Set();
+        let tickData = {}; // Almacena datos de ticks por activo
+        let strategies = {
+            distribution: true,
+            benford: true,
+            patterns: true
+        };
+
+        // Lista de activos comunes en Deriv
+        const commonAssets = [
+            { symbol: 'R_10', name: 'Volatility 10 Index', type: 'volatility' },
+            { symbol: 'R_25', name: 'Volatility 25 Index', type: 'volatility' },
+            { symbol: 'R_50', name: 'Volatility 50 Index', type: 'volatility' },
+            { symbol: 'R_75', name: 'Volatility 75 Index', type: 'volatility' },
+            { symbol: 'R_100', name: 'Volatility 100 Index', type: 'volatility' },
+            { symbol: '1HZ10V', name: 'Volatility 10 (1s)', type: 'volatility' },
+            { symbol: '1HZ25V', name: 'Volatility 25 (1s)', type: 'volatility' },
+            { symbol: '1HZ50V', name: 'Volatility 50 (1s)', type: 'volatility' },
+            { symbol: '1HZ75V', name: 'Volatility 75 (1s)', type: 'volatility' },
+            { symbol: '1HZ100V', name: 'Volatility 100 (1s)', type: 'volatility' },
+            { symbol: 'DBULL', name: 'Dollar Bull', type: 'volatility' },
+            { symbol: 'DBEAR', name: 'Dollar Bear', type: 'volatility' },
+            { symbol: 'EURUSD', name: 'EUR/USD', type: 'forex' },
+            { symbol: 'GBPUSD', name: 'GBP/USD', type: 'forex' },
+            { symbol: 'USDJPY', name: 'USD/JPY', type: 'forex' },
+            { symbol: 'AUDUSD', name: 'AUD/USD', type: 'forex' },
+            { symbol: 'USDCAD', name: 'USD/CAD', type: 'forex' },
+            { symbol: 'NZDUSD', name: 'NZD/USD', type: 'forex' },
+            { symbol: 'BTCUSD', name: 'Bitcoin/USD', type: 'crypto' },
+            { symbol: 'ETHUSD', name: 'Ethereum/USD', type: 'crypto' },
+            { symbol: 'LTCUSD', name: 'Litecoin/USD', type: 'crypto' },
+            { symbol: 'XRPUSD', name: 'Ripple/USD', type: 'crypto' },
+            { symbol: 'OIL', name: 'Crude Oil WTI', type: 'commodities' },
+            { symbol: 'BRENT', name: 'Crude Oil Brent', type: 'commodities' },
+            { symbol: 'XAUUSD', name: 'Gold/USD', type: 'commodities' },
+            { symbol: 'XAGUSD', name: 'Silver/USD', type: 'commodities' }
+        ];
+
+        // Inicializar la interfaz
+        function init() {
+            renderAssets(commonAssets);
+        }
+
+        // Renderizar lista de activos
+        function renderAssets(assets) {
+            const grid = document.getElementById('assetsGrid');
+            grid.innerHTML = '';
+
+            assets.forEach(asset => {
+                const item = document.createElement('div');
+                item.className = 'asset-item';
+                item.innerHTML = `
+                    <div class="asset-info">
+                        <div class="asset-name">${asset.symbol}</div>
+                        <div class="asset-desc">${asset.name}</div>
+                    </div>
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" value="${asset.symbol}" onchange="toggleAsset('${asset.symbol}')">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                grid.appendChild(item);
+            });
+        }
+
+        // Filtrar activos por tipo
+        function filterAssets() {
+            const filter = document.getElementById('assetTypeFilter').value;
+            if (filter === 'all') {
+                renderAssets(commonAssets);
+            } else {
+                const filtered = commonAssets.filter(a => a.type === filter);
+                renderAssets(filtered);
+            }
+        }
+
+        // Alternar selección de activo
+        function toggleAsset(symbol) {
+            if (activeAssets.has(symbol)) {
+                activeAssets.delete(symbol);
+                if (ws && isConnected) {
+                    ws.send(JSON.stringify({ forget: symbol }));
+                }
+            } else {
+                activeAssets.add(symbol);
+                if (ws && isConnected) {
+                    subscribeToTicks(symbol);
+                }
+            }
+            updateActiveAssetsDisplay();
+        }
+
+        // Actualizar estrategias
+        function updateStrategies() {
+            strategies.distribution = document.getElementById('strategyDistribution').checked;
+            strategies.benford = document.getElementById('strategyBenford').checked;
+            strategies.patterns = document.getElementById('strategyPatterns').checked;
+            
+            // Recalcular análisis para todos los activos activos
+            for (const symbol of activeAssets) {
+                if (tickData[symbol]) {
+                    analyzeAsset(symbol);
+                }
+            }
+        }
+
+        // Conectar/Desconectar WebSocket
+        function toggleConnection() {
+            if (isConnected) {
+                disconnect();
+            } else {
+                connect();
+            }
+        }
+
+        // Conectar a Deriv API
+        function connect() {
+            const appId = document.getElementById('appIdInput').value.trim();
+            if (!appId) {
+                alert('Por favor ingrese un App ID válido');
+                return;
+            }
+
+            const wsUrl = `wss://ws.derivws.com/websockets/v3?app_id=${appId}`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                isConnected = true;
+                updateConnectionStatus(true);
+                addTickLog('Sistema', 'Conexión establecida con Deriv API');
+                
+                // Suscribirse a activos seleccionados
+                for (const symbol of activeAssets) {
+                    subscribeToTicks(symbol);
+                }
+            };
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleMessage(data);
+            };
+
+            ws.onclose = function() {
+                isConnected = false;
+                updateConnectionStatus(false);
+                addTickLog('Sistema', 'Conexión cerrada');
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket Error:', error);
+                addTickLog('Sistema', 'Error de conexión');
+            };
+        }
+
+        // Desconectar
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            isConnected = false;
+            updateConnectionStatus(false);
+        }
+
+        // Actualizar estado de conexión
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('connectionIndicator');
+            const text = document.getElementById('connectionText');
+            const btn = document.getElementById('connectBtn');
+
+            if (connected) {
+                indicator.classList.add('connected');
+                text.textContent = 'Conectado';
+                btn.textContent = 'Desconectar';
+                btn.classList.remove('btn-connect');
+                btn.classList.add('btn-disconnect');
+            } else {
+                indicator.classList.remove('connected');
+                text.textContent = 'Desconectado';
+                btn.textContent = 'Conectar';
+                btn.classList.remove('btn-disconnect');
+                btn.classList.add('btn-connect');
+            }
+        }
+
+        // Suscribirse a ticks de un activo
+        function subscribeToTicks(symbol) {
+            if (!ws || !isConnected) return;
+
+            ws.send(JSON.stringify({
+                ticks: symbol,
+                subscribe: 1
+            }));
+        }
+
+        // Manejar mensajes del WebSocket
+        function handleMessage(data) {
+            if (data.tick) {
+                processTick(data.tick);
+            } else if (data.error) {
+                addTickLog('Error', data.error.message);
+            } else if (data.msg_type === 'authorize') {
+                addTickLog('Sistema', 'Autorización exitosa');
+            }
+        }
+
+        // Procesar tick recibido
+        function processTick(tick) {
+            const symbol = tick.symbol;
+            const price = tick.quote;
+            const digit = parseInt(price.toString().split('.')[1].slice(-1));
+            const time = new Date(tick.epoch * 1000).toLocaleTimeString();
+
+            // Inicializar datos si no existen
+            if (!tickData[symbol]) {
+                tickData[symbol] = {
+                    digits: [],
+                    prices: [],
+                    times: []
+                };
+            }
+
+            // Agregar nuevo dígito (mantener últimos 100)
+            tickData[symbol].digits.unshift(digit);
+            tickData[symbol].prices.unshift(price);
+            tickData[symbol].times.unshift(time);
+
+            if (tickData[symbol].digits.length > 100) {
+                tickData[symbol].digits.pop();
+                tickData[symbol].prices.pop();
+                tickData[symbol].times.pop();
+            }
+
+            // Registrar en log
+            addTickLog(symbol, `Precio: ${price} | Dígito: ${digit}`);
+
+            // Analizar activo
+            analyzeAsset(symbol);
+        }
+
+        // Analizar activo con estrategias activas
+        function analyzeAsset(symbol) {
+            if (!tickData[symbol] || tickData[symbol].digits.length < 10) return;
+
+            const data = tickData[symbol];
+            const currentDigit = data.digits[0];
+            const digits = data.digits.slice(0, 50); // Últimos 50 dígitos
+
+            let signals = [];
+            let analysisHTML = '';
+
+            // Estrategia 1: Distribución de Dígitos
+            if (strategies.distribution) {
+                const distribution = calculateDigitDistribution(digits);
+                const hotDigits = getHotDigits(distribution, 3);
+                const coldDigits = getColdDigits(distribution, 3);
+                
+                signals.push({
+                    strategy: 'distribution',
+                    signal: determineDistributionSignal(currentDigit, hotDigits, coldDigits)
+                });
+
+                analysisHTML += createDistributionHTML(distribution);
+            }
+
+            // Estrategia 2: Ley de Benford
+            if (strategies.benford) {
+                const benfordAnalysis = calculateBenfordAnalysis(data.prices);
+                
+                signals.push({
+                    strategy: 'benford',
+                    signal: determineBenfordSignal(benfordAnalysis)
+                });
+
+                analysisHTML += createBenfordHTML(benfordAnalysis);
+            }
+
+            // Estrategia 3: Patrones de Repetición
+            if (strategies.patterns) {
+                const patternAnalysis = analyzePatterns(digits);
+                
+                signals.push({
+                    strategy: 'patterns',
+                    signal: determinePatternSignal(patternAnalysis)
+                });
+
+                analysisHTML += createPatternHTML(patternAnalysis);
+            }
+
+            // Determinar señal final
+            const finalSignal = calculateFinalSignal(signals);
+
+            // Actualizar tarjeta del activo
+            updateAssetCard(symbol, currentDigit, analysisHTML, finalSignal, data);
+        }
+
+        // Calcular distribución de dígitos
+        function calculateDigitDistribution(digits) {
+            const distribution = Array(10).fill(0);
+            digits.forEach(d => distribution[d]++);
+            
+            // Convertir a porcentajes
+            return distribution.map(count => (count / digits.length) * 100);
+        }
+
+        // Obtener dígitos calientes (más frecuentes)
+        function getHotDigits(distribution, count) {
+            return distribution
+                .map((percentage, digit) => ({ digit, percentage }))
+                .sort((a, b) => b.percentage - a.percentage)
+                .slice(0, count)
+                .map(item => item.digit);
+        }
+
+        // Obtener dígitos fríos (menos frecuentes)
+        function getColdDigits(distribution, count) {
+            return distribution
+                .map((percentage, digit) => ({ digit, percentage }))
+                .sort((a, b) => a.percentage - b.percentage)
+                .slice(0, count)
+                .map(item => item.digit);
+        }
+
+        // Determinar señal basada en distribución
+        function determineDistributionSignal(currentDigit, hotDigits, coldDigits) {
+            if (hotDigits.includes(currentDigit)) {
+                return { type: 'buy', strength: 0.6, reason: 'Dígito caliente' };
+            } else if (coldDigits.includes(currentDigit)) {
+                return { type: 'sell', strength: 0.6, reason: 'Dígito frío' };
+            }
+            return { type: 'wait', strength: 0, reason: 'Neutral' };
+        }
+
+        // Calcular análisis de Benford
+        function calculateBenfordAnalysis(prices) {
+            const firstDigits = prices.map(price => {
+                const str = price.toString().replace('.', '');
+                return parseInt(str[0]);
+            }).filter(d => d > 0);
+
+            const distribution = Array(10).fill(0);
+            firstDigits.forEach(d => {
+                if (d >= 1 && d <= 9) distribution[d]++;
+            });
+
+            const total = firstDigits.length;
+            const percentages = distribution.map(count => total > 0 ? (count / total) * 100 : 0);
+
+            // Valores esperados según Ley de Benford
+            const benfordExpected = [0, 30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6];
+
+            // Calcular desviación
+            let deviation = 0;
+            for (let i = 1; i <= 9; i++) {
+                deviation += Math.abs(percentages[i] - benfordExpected[i]);
+            }
+            deviation /= 9;
+
+            return {
+                actual: percentages,
+                expected: benfordExpected,
+                deviation: deviation,
+                anomaly: deviation > 10 // Anomalía si desviación > 10%
+            };
+        }
+
+        // Determinar señal basada en Benford
+        function determineBenfordSignal(benfordData) {
+            if (benfordData.anomaly) {
+                // Buscar dígitos sobre-representados
+                const overrepresented = [];
+                const underrepresented = [];
+                
+                for (let i = 1; i <= 9; i++) {
+                    const diff = benfordData.actual[i] - benfordData.expected[i];
+                    if (diff > 5) overrepresented.push(i);
+                    if (diff < -5) underrepresented.push(i);
+                }
+
+                if (overrepresented.length > 0) {
+                    return { type: 'sell', strength: 0.7, reason: 'Anomalía Benford detectada' };
+                }
+            }
+            return { type: 'wait', strength: 0, reason: 'Distribución normal' };
+        }
+
+        // Analizar patrones
+        function analyzePatterns(digits) {
+            const recent = digits.slice(0, 20);
+            
+            // Detectar repeticiones consecutivas
+            let consecutiveCount = 1;
+            let maxConsecutive = 1;
+            let consecutiveDigit = null;
+            
+            for (let i = 1; i < recent.length; i++) {
+                if (recent[i] === recent[i - 1]) {
+                    consecutiveCount++;
+                    if (consecutiveCount > maxConsecutive) {
+                        maxConsecutive = consecutiveCount;
+                        consecutiveDigit = recent[i];
+                    }
+                } else {
+                    consecutiveCount = 1;
+                }
+            }
+
+            // Detectar patrón alternante
+            let alternating = true;
+            for (let i = 2; i < Math.min(10, recent.length); i++) {
+                if (recent[i] !== recent[i - 2]) {
+                    alternating = false;
+                    break;
+                }
+            }
+
+            // Detectar secuencia ascendente/descendente
+            let ascending = true;
+            let descending = true;
+            for (let i = 1; i < Math.min(5, recent.length); i++) {
+                if (recent[i] <= recent[i - 1]) ascending = false;
+                if (recent[i] >= recent[i - 1]) descending = false;
+            }
+
+            return {
+                consecutive: {
+                    count: maxConsecutive,
+                    digit: consecutiveDigit,
+                    detected: maxConsecutive >= 3
+                },
+                alternating: alternating && recent.length >= 5,
+                trend: ascending ? 'up' : descending ? 'down' : 'none'
+            };
+        }
+
+        // Determinar señal basada en patrones
+        function determinePatternSignal(patternData) {
+            if (patternData.consecutive.detected) {
+                return { 
+                    type: 'sell', 
+                    strength: 0.8, 
+                    reason: `Racha de ${patternData.consecutive.count} dígitos ${patternData.consecutive.digit}` 
+                };
+            }
+            
+            if (patternData.alternating) {
+                return { type: 'buy', strength: 0.5, reason: 'Patrón alternante detectado' };
+            }
+
+            if (patternData.trend !== 'none') {
+                return { 
+                    type: patternData.trend === 'up' ? 'buy' : 'sell', 
+                    strength: 0.6, 
+                    reason: `Tendencia ${patternData.trend === 'up' ? 'ascendente' : 'descendente'}` 
+                };
+            }
+
+            return { type: 'wait', strength: 0, reason: 'Sin patrón claro' };
+        }
+
+        // Calcular señal final combinando todas las estrategias
+        function calculateFinalSignal(signals) {
+            let buyScore = 0;
+            let sellScore = 0;
+            let totalWeight = 0;
+
+            signals.forEach(signal => {
+                if (signal.signal.type === 'buy') {
+                    buyScore += signal.signal.strength;
+                } else if (signal.signal.type === 'sell') {
+                    sellScore += signal.signal.strength;
+                }
+                totalWeight += signal.signal.strength;
+            });
+
+            if (totalWeight === 0) {
+                return { type: 'wait', confidence: 0, reasons: [] };
+            }
+
+            const reasons = signals.map(s => s.signal.reason);
+
+            if (buyScore > sellScore) {
+                return { 
+                    type: 'buy', 
+                    confidence: (buyScore / totalWeight) * 100, 
+                    reasons: reasons 
+                };
+            } else if (sellScore > buyScore) {
+                return { 
+                    type: 'sell', 
+                    confidence: (sellScore / totalWeight) * 100, 
+                    reasons: reasons 
+                };
+            }
+
+            return { type: 'wait', confidence: 0, reasons: ['Señales contradictorias'] };
+        }
+
+        // Crear HTML de distribución
+        function createDistributionHTML(distribution) {
+            let html = '<div class="digit-distribution">';
+            for (let i = 0; i <= 9; i++) {
+                const percentage = distribution[i];
+                html += `
+                    <div class="digit-bar">
+                        <div class="digit-bar-value">${percentage.toFixed(1)}%</div>
+                        <div class="digit-bar-graph">
+                            <div class="digit-bar-fill" style="height: ${percentage}%"></div>
+                        </div>
+                        <div class="digit-bar-label">${i}</div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            return html;
+        }
+
+        // Crear HTML de Benford
+        function createBenfordHTML(benfordData) {
+            const anomalyText = benfordData.anomaly ? '⚠️ ANOMALÍA DETECTADA' : '✓ Distribución normal';
+            const anomalyClass = benfordData.anomaly ? 'color: #ff4444;' : 'color: #00ff88;';
+            
+            let html = `
+                <div class="benford-analysis">
+                    <div class="benford-title">Ley de Benford</div>
+                    <div class="benford-data" style="${anomalyClass}">${anomalyText}</div>
+                    <div class="benford-data">Desviación: ${benfordData.deviation.toFixed(2)}%</div>
+                    <div class="benford-data">Dígito 1: ${benfordData.actual[1]?.toFixed(1)}% (esperado: 30.1%)</div>
+                </div>
+            `;
+            return html;
+        }
+
+        // Crear HTML de patrones
+        function createPatternHTML(patternData) {
+            let patterns = [];
+            
+            if (patternData.consecutive.detected) {
+                patterns.push(`Racha: ${patternData.consecutive.count}x dígito ${patternData.consecutive.digit}`);
+            }
+            if (patternData.alternating) {
+                patterns.push('Patrón alternante');
+            }
+            if (patternData.trend !== 'none') {
+                patterns.push(`Tendencia: ${patternData.trend === 'up' ? '↑' : '↓'}`);
+            }
+            
+            let html = `
+                <div class="pattern-analysis">
+                    <div class="pattern-title">Patrones Detectados</div>
+                    <div class="pattern-data">${patterns.length > 0 ? patterns.join(' | ') : 'Sin patrones claros'}</div>
+                </div>
+            `;
+            return html;
+        }
+
+        // Actualizar tarjeta de activo
+        function updateAssetCard(symbol, currentDigit, analysisHTML, signal, data) {
+            const container = document.getElementById('activeAssetsDisplay');
+            let card = document.getElementById(`card-${symbol}`);
+
+            if (!card) {
+                card = document.createElement('div');
+                card.className = 'asset-card';
+                card.id = `card-${symbol}`;
+                container.appendChild(card);
+            }
+
+            const signalClass = signal.type === 'buy' ? 'signal-buy' : 
+                               signal.type === 'sell' ? 'signal-sell' : 'signal-wait';
+            const signalText = signal.type === 'buy' ? 'COMPRA' : 
+                              signal.type === 'sell' ? 'VENTA' : 'ESPERAR';
+
+            // Historial de últimos dígitos
+            let historyHTML = '<div class="last-digit-history">';
+            data.digits.slice(0, 10).forEach(d => {
+                historyHTML += `<div class="last-digit-item">${d}</div>`;
+            });
+            historyHTML += '</div>';
+
+            card.innerHTML = `
+                <div class="asset-card-header">
+                    <div class="asset-card-title">${symbol}</div>
+                    <div style="font-size: 0.8em; opacity: 0.7;">${data.digits.length} ticks</div>
+                </div>
+                <div class="current-digit">${currentDigit}</div>
+                ${historyHTML}
+                ${analysisHTML}
+                <div class="signal-box ${signalClass}">${signalText} (${signal.confidence?.toFixed(0)}%)</div>
+                <div class="stats-row">
+                    <span>Precio: ${data.prices[0]?.toFixed(5)}</span>
+                    <span>${data.times[0]}</span>
+                </div>
+            `;
+        }
+
+        // Actualizar display de activos activos
+        function updateActiveAssetsDisplay() {
+            const container = document.getElementById('activeAssetsDisplay');
+            
+            if (activeAssets.size === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; opacity: 0.7; padding: 40px;">
+                        Seleccione activos y conecte para comenzar el análisis
+                    </div>
+                `;
+                return;
+            }
+
+            // Mantener solo las tarjetas de activos activos
+            const cards = container.querySelectorAll('.asset-card');
+            cards.forEach(card => {
+                const symbol = card.id.replace('card-', '');
+                if (!activeAssets.has(symbol)) {
+                    card.remove();
+                }
+            });
+        }
+
+        // Agregar entrada al log de ticks
+        function addTickLog(symbol, message) {
+            const log = document.getElementById('tickLog');
+            const time = new Date().toLocaleTimeString();
+            
+            const entry = document.createElement('div');
+            entry.className = 'tick-log-entry';
+            entry.innerHTML = `
+                <span class="tick-log-time">[${time}]</span>
+                <span class="tick-log-symbol">${symbol}:</span>
+                ${message}
+            `;
+
+            log.insertBefore(entry, log.firstChild);
+
+            // Mantener solo últimos 50 registros
+            while (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        // Inicializar al cargar
+        init();
+    </script>
+</body>
+</html>
